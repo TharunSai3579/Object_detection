@@ -18,4 +18,4 @@ A modern web interface for real-time object detection using YOLOv8 model with bo
 - Real-time video streaming
 - Interactive controls and animations
 
-## Setup Instructions
+
