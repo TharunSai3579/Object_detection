@@ -1,0 +1,7 @@
+numpy==1.24.3
+Pillow==10.0.1
+opencv-python-headless==4.8.1.78
+# CPU-only PyTorch (skip CUDA packages)
+torch==2.0.1 --index-url https://download.pytorch.org/whl/cpu
+torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cpu
+ultralytics==8.0.200

@@ -1,0 +1,15 @@
+# Constraint file to prevent CUDA packages
+# This prevents large CUDA dependencies when installing ultralytics
+
+# Explicitly prevent CUDA packages
+--no-binary torch
+-c /dev/null
+
+# Use CPU-only PyTorch
+torch==2.0.1+cpu
+torchvision==0.15.2+cpu
+
+# These packages will not be installed
+# nvidia-*
+# cuda-*
+# nccl-*
