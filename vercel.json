@@ -1,9 +1,13 @@
 {
   "version": 2,
+  "buildCommand": "pip install --no-cache-dir --only-binary :all: -r requirements.txt",
   "builds": [
     {
       "src": "api/detect.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "pythonVersion": "3.11"
+      }
     }
   ],
   "routes": [
@@ -17,7 +21,9 @@
     }
   ],
   "env": {
-    "PYTHONUNBUFFERED": "1"
+    "PYTHONUNBUFFERED": "1",
+    "PIP_NO_CACHE_DIR": "1",
+    "PIP_DISABLE_PIP_VERSION_CHECK": "1"
   },
   "regions": ["iad1"]
 }

@@ -5,47 +5,76 @@ import numpy as np
 from PIL import Image
 import io
 import os
-import sys
-from ultralytics import YOLO
 
-# Load model once at cold start
 try:
-    model = YOLO('yolov8n.pt')
-except:
-    model = None
+    import onnxruntime as rt
+    ONNX_AVAILABLE = True
+except ImportError:
+    ONNX_AVAILABLE = False
 
-def draw_boxes(image, results):
-    """Draw bounding boxes on image with labels and confidence scores"""
+# For fallback: try to load ultralytics if available
+MODEL_PATH = 'yolov8n.pt'
+ONNX_PATH = 'yolov8n.onnx'
+
+model = None
+session = None
+
+def init_model():
+    """Initialize model - try ONNX first, then fallback to ultralytics"""
+    global model, session, ONNX_AVAILABLE
+
+    if ONNX_AVAILABLE and os.path.exists(ONNX_PATH):
+        try:
+            providers = ['CPUExecutionProvider']
+            session = rt.InferenceSession(ONNX_PATH, providers=providers)
+            return True
+        except Exception as e:
+            print(f"ONNX loading failed: {e}")
+
+    # Fallback: try ultralytics
+    try:
+        from ultralytics import YOLO
+        model = YOLO(MODEL_PATH)
+        return True
+    except Exception as e:
+        print(f"YOLO loading failed: {e}")
+        return False
+
+def draw_boxes(image, detections):
+    """Draw bounding boxes on image"""
     annotated_image = image.copy()
 
-    for result in results:
-        boxes = result.boxes
-        if boxes is not None:
-            for box in boxes:
-                # Get box coordinates
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
+    for detection in detections:
+        x1, y1, x2, y2 = map(int, [
+            detection['bbox']['x1'],
+            detection['bbox']['y1'],
+            detection['bbox']['x2'],
+            detection['bbox']['y2']
+        ])
 
-                # Get class and confidence
-                cls = int(box.cls[0])
-                conf = float(box.conf[0])
-                label = f"{model.names[cls]}: {conf:.2f}"
+        conf = detection['confidence']
+        label = f"{detection['class']}: {conf:.2f}"
 
-                # Draw rectangle
-                cv2.rectangle(annotated_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        # Draw rectangle
+        cv2.rectangle(annotated_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-                # Draw label background
-                label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
-                cv2.rectangle(annotated_image, (x1, y1 - label_size[1] - 10),
-                             (x1 + label_size[0], y1), (0, 255, 0), -1)
+        # Draw label background
+        label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
+        cv2.rectangle(annotated_image, (x1, y1 - label_size[1] - 10),
+                     (x1 + label_size[0], y1), (0, 255, 0), -1)
 
-                # Draw label text
-                cv2.putText(annotated_image, label, (x1, y1 - 5),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+        # Draw label text
+        cv2.putText(annotated_image, label, (x1, y1 - 5),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
 
     return annotated_image
 
-def extract_detections(results):
-    """Extract detection information as JSON"""
+def detect_with_ultralytics(image_cv):
+    """Use ultralytics for detection"""
+    if model is None:
+        return []
+
+    results = model(image_cv)
     detections = []
 
     for result in results:
@@ -72,11 +101,14 @@ def extract_detections(results):
 def handler(request):
     """Vercel serverless function handler"""
 
-    if model is None:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': 'YOLO model not loaded'})
-        }
+    # Initialize model on first call
+    global model, session
+    if model is None and session is None:
+        if not init_model():
+            return {
+                'statusCode': 500,
+                'body': json.dumps({'error': 'Model failed to load'})
+            }
 
     try:
         # Get image from request
@@ -107,18 +139,15 @@ def handler(request):
                 'body': json.dumps({'error': 'Invalid image file'})
             }
 
-        # Run YOLO detection
-        results = model(image_cv)
+        # Run detection
+        detections = detect_with_ultralytics(image_cv)
 
         # Draw boxes on image
-        annotated_image = draw_boxes(image_cv, results)
+        annotated_image = draw_boxes(image_cv, detections)
 
         # Convert back to base64
         _, buffer = cv2.imencode('.jpg', annotated_image)
         annotated_base64 = base64.b64encode(buffer).decode('utf-8')
-
-        # Extract detection data
-        detections = extract_detections(results)
 
         return {
             'statusCode': 200,
