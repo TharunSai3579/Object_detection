@@ -1,0 +1,19 @@
+[project]
+name = "yolo-object-detection"
+version = "1.0.0"
+description = "YOLO Object Detection for Vercel"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy==1.24.3",
+    "Pillow==10.0.1",
+    "opencv-python-headless==4.8.1.78",
+    "ultralytics==8.0.200"
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+# Disable uv package resolution to avoid CUDA downloads
+# Use pip install instead

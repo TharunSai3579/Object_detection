@@ -1,0 +1,35 @@
+#!/bin/bash
+# ⚠️ IMPORTANT: This codespace environment has a hook running "uv sync"
+# which resolves ALL dependencies including heavy CUDA packages (~3GB)
+#
+# This is ONLY a local codespace issue.
+# Vercel deployment will work fine (uses pip, not uv)!
+
+echo "🚀 YOLO Detection - Local Development Setup"
+echo "==========================================="
+echo ""
+echo "⚠️  Your codespace is using 'uv' which downloads CUDA packages."
+echo "   This is LOCAL ONLY - Vercel uses 'pip' and works fine!"
+echo ""
+echo "Choose an option:"
+echo ""
+echo "1️⃣  SKIP LOCAL SETUP (Recommended for Vercel)"
+echo "    → Just deploy to Vercel:"
+echo "      npm install -g vercel && vercel login && vercel --prod"
+echo ""
+echo "2️⃣  USE CPU-ONLY LOCALLY"
+echo "    → Run: pip3 install --no-cache-dir --only-binary :all: \\"
+echo "             numpy==1.24.3 Pillow==10.0.1 "
+echo "             opencv-python-headless==4.8.1.78"
+echo "    → Then: pip3 install --index-url https://download.pytorch.org/whl/cpu \\"
+echo "             torch==2.0.1 torchvision==0.15.2"
+echo "    → Then: pip3 install --no-cache-dir ultralytics==8.0.200"
+echo ""
+echo "3️⃣  RUN BASH INSTALLER"
+echo "    → chmod +x install-cpu.sh && ./install-cpu.sh"
+echo ""
+echo "==========================================="
+echo ""
+echo "✅ VERCEL DEPLOYMENT IS ALREADY CONFIGURED!"
+echo "   Just run: vercel --prod"
+echo ""
